@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gym Tracker Pro - Weekly & Progressive Overload</title>
+    <!-- Chart.js for Progress tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --card-bg: #1c1c1e;
+            --card-subtle: #26262a;
+            --accent: #ff453a;
+            --accent-glow: rgba(255, 69, 58, 0.25);
+            --success: #30d158;
+            --warning: #ffd60a;
+            --text: #ffffff;
+            --text-dim: #8e8e93;
+            --text-secondary: #c7c7cc;
+            --input-bg: #2c2c2e;
+            --border-color: #38383a;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px 16px 90px 16px;
+            max-width: 540px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-top: 4px;
+        }
+
+        .app-header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #ff453a, #ff9f0a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-streak {
+            font-size: 13px;
+            background: var(--card-subtle);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: #ff9f0a;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* WEEKLY CALENDAR STRIP */
+        .calendar-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .calendar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .calendar-nav-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 13px;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-weight: 600;
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .day-pill {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 2px;
+            background: var(--input-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .day-pill.active {
+            border-color: var(--accent);
+            background: rgba(255, 69, 58, 0.15);
+        }
+
+        .day-pill.today {
+            box-shadow: 0 0 0 1px #ff9f0a;
+        }
+
+        .day-name {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .day-number {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .day-status-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            margin-top: 4px;
+            background-color: transparent;
+        }
+
+        .day-status-dot.completed {
+            background-color: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        /* CARD GENERAL */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent);
+        }
+
+        /* PREVIOUS WORKOUT INSIGHT BANNER */
+        .prev-workout-insight {
+            background: linear-gradient(135deg, rgba(255, 69, 58, 0.1), rgba(255, 159, 10, 0.08));
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .prev-workout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #ff9f0a;
+            font-weight: 600;
+        }
+
+        .prev-workout-stats {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .btn-copy-prev {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        /* SETS BUILDER TABLE */
+        .sets-section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0 8px 0;
+        }
+
+        .set-table {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .set-row-header {
+            display: grid;
+            grid-template-columns: 36px 1fr 1fr 34px;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: center;
+            padding-bottom: 6px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .set-row-header.bodyweight-mode {
+            grid-template-columns: 36px 1fr 34px;
+        }
+
+        .set-row {
+            display: grid;
+            grid-template-columns: 36px 1fr 1fr 34px;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .set-row.bodyweight-mode {
+            grid-template-columns: 36px 1fr 34px;
+        }
+
+        .set-index {
+            background: var(--card-subtle);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .set-row input {
+            padding: 8px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 15px;
+            height: 38px;
+        }
+
+        .btn-del-set {
+            background: rgba(255, 69, 58, 0.15);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            color: #ff453a;
+            border-radius: var(--radius-sm);
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-add-set {
+            background: var(--card-subtle);
+            border: 1px dashed var(--border-color);
+            color: var(--text-secondary);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-add-set:active {
+            background: var(--input-bg);
+            border-color: var(--accent);
+        }
+
+        /* SUBMIT BUTTON */
+        .btn-save-log {
+            background: linear-gradient(135deg, #ff453a, #e0261b);
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 14px;
+            box-shadow: 0 4px 14px var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.1s;
+        }
+
+        .btn-save-log:active {
+            transform: scale(0.98);
+        }
+
+        /* TABS VIEW CONTROLLER */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* LOG LIST CARDS */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0 12px 0;
+        }
+
+        .section-header h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .log-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 12px;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .log-item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .log-item-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .log-item-meta {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .log-progression-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .prog-up {
+            background: rgba(48, 209, 88, 0.15);
+            color: #30d158;
+            border: 1px solid rgba(48, 209, 88, 0.3);
+        }
+
+        .prog-down {
+            background: rgba(255, 69, 58, 0.15);
+            color: #ff453a;
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+
+        .prog-equal {
+            background: rgba(255, 214, 10, 0.15);
+            color: #ffd60a;
+            border: 1px solid rgba(255, 214, 10, 0.3);
+        }
+
+        .prog-pr {
+            background: linear-gradient(90deg, rgba(255, 159, 10, 0.2), rgba(255, 69, 58, 0.2));
+            color: #ff9f0a;
+            border: 1px solid rgba(255, 159, 10, 0.4);
+        }
+
+        .log-sets-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .set-chip {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .set-chip strong {
+            color: var(--text);
+        }
+
+        .btn-delete-log {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        .btn-delete-log:hover {
+            color: var(--accent);
+        }
+
+        /* PROGRESSION TAB */
+        .chart-container {
+            position: relative;
+            height: 260px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-top: 2px;
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* BOTTOM NAVIGATION BAR */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(28, 28, 30, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 12px 14px 12px;
+            z-index: 100;
+            max-width: 540px;
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+            width: 70px;
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+
+        .nav-item svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        /* BACKUP MODAL / SECTION */
+        .data-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background: var(--card-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text);
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 16px;
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            fill: var(--text-dim);
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- APP HEADER -->
+    <header class="app-header">
+        <h1>🏋️‍♂️ GYM TRACKER PRO</h1>
+        <div class="badge-streak" id="streakBadge">
+            🔥 <span>0 ngày tuần này</span>
+        </div>
+    </header>
+
+    <!-- WEEKLY CALENDAR STRIP -->
+    <div class="calendar-card">
+        <div class="calendar-header">
+            <span class="calendar-title" id="weekRangeLabel">Tuần này</span>
+            <div>
+                <button class="calendar-nav-btn" onclick="changeWeek(-1)">◀ Trước</button>
+                <button class="calendar-nav-btn" onclick="goToCurrentWeek()">Hiện tại</button>
+                <button class="calendar-nav-btn" onclick="changeWeek(1)">Sau ▶</button>
+            </div>
+        </div>
+        <div class="week-grid" id="weekGrid">
+            <!-- Render dynamically -->
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 1: WORKOUT LOGGING (TẬP LUYỆN) -->
+    <!-- ============================================== -->
+    <main id="tab-workout" class="tab-content active">
+        <!-- FORM CARD -->
+        <div class="card">
+            <div class="form-group">
+                <label>Buổi tập</label>
+                <select id="workoutDay" onchange="onWorkoutDayChange()">
+                    <option value="Push">Push (Ngực - Vai - Tay sau)</option>
+                    <option value="Pull">Pull (Lưng - Tay trước - Vai sau)</option>
+                    <option value="Leg">Leg (Chân - Mông - Bụng)</option>
+                    <option value="Chest n Back">Chest & Back (Ngực & Lưng)</option>
+                    <option value="Shoul Tri n Bi">Shoulder & Arms (Vai & Tay)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Tên bài tập</label>
+                <select id="exerciseSelect" onchange="onExerciseChange()">
+                    <!-- Options loaded by JS -->
+                </select>
+                <input type="text" id="customExerciseInput" placeholder="Nhập tên bài tập mới..." style="display: none; margin-top: 8px;" oninput="onCustomExerciseInput()">
+            </div>
+
+            <!-- PREVIOUS WORKOUT INSIGHT BANNER -->
+            <div id="prevWorkoutBox" class="prev-workout-insight" style="display: none;">
+                <div class="prev-workout-header">
+                    <span>⚡ LẦN TẬP GẦN NHẤT (<span id="prevDateText">--/--</span>)</span>
+                    <button class="btn-copy-prev" type="button" onclick="copyPreviousSets()">Copy mức tập</button>
+                </div>
+                <div class="prev-workout-stats">
+                    <span id="prevSetsSummary">--</span>
+                    <span id="prevMaxWeight" style="color: var(--accent); font-size: 12px;">--</span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label id="setsConfigLabel">Chi tiết Sets & Mức tạ</label>
+                    <select id="unitSelect" style="width: 80px; padding: 4px 8px; font-size: 13px;">
+                        <option value="kg">kg</option>
+                        <option value="lbs">lbs</option>
+                    </select>
+                </div>
+
+                <!-- SETS BUILDER -->
+                <div class="set-row-header" id="setRowHeader">
+                    <div>SET</div>
+                    <div id="headerWeightCol">MỨC TẠ</div>
+                    <div>SỐ REPS</div>
+                    <div></div>
+                </div>
+                <div id="setsContainer">
+                    <!-- Dynamic set rows -->
+                </div>
+
+                <button type="button" class="btn-add-set" onclick="addSetRow()">
+                    ➕ Thêm Set
+                </button>
+            </div>
+
+            <button class="btn-save-log" onclick="saveWorkoutLog()">
+                💾 LƯU BÀI TẬP VÀO NHẬT KÝ
+            </button>
+        </div>
+
+        <!-- SELECTED DAY'S WORKOUT HISTORY -->
+        <div class="section-header">
+            <h3 id="currentSelectedDateTitle">📅 Bài tập ngày hôm nay</h3>
+            <span id="dailyTotalVolume" style="font-size: 13px; color: var(--text-dim); font-weight: 600;"></span>
+        </div>
+        <div id="dailyLogList">
+            <!-- Render logs for the active selected day -->
+        </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: PROGRESSION (TIẾN ĐỘ & TĂNG TIẾN TẠ) -->
+    <!-- ============================================== -->
+    <main id="tab-progress" class="tab-content">
+        <div class="card">
+            <div class="form-group">
+                <label>Chọn bài tập theo dõi</label>
+                <select id="progressExerciseSelect" onchange="renderProgressChart()">
+                    <!-- Options populated from all logged exercises -->
+                </select>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-lbl" id="stat1Label">Kỷ lục tạ (PR)</div>
+                    <div class="stat-val" id="statMaxWeight">0 kg</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-lbl" id="stat2Label">Tổng Volume cao nhất</div>
+                    <div class="stat-val" id="statMaxVolume">0 kg</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="progressChart"></canvas>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h3>📈 Lịch sử tăng tiến chi tiết</h3>
+        </div>
+        <div id="exerciseHistoryList">
+            <!-- Full history for selected exercise -->
+        </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: SETTINGS & BACKUP (CÀI ĐẶT / SAO LƯU) -->
+    <!-- ============================================== -->
+    <main id="tab-settings" class="tab-content">
+        <div class="card">
+            <h3 style="font-size: 16px; margin-bottom: 12px;">📊 Thống kê tổng quan</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-lbl">Tổng buổi đã tập</div>
+                    <div class="stat-val" id="statTotalWorkouts">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-lbl">Tổng bài tập đã lưu</div>
+                    <div class="stat-val" id="statTotalExercises">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="font-size: 16px; margin-bottom: 6px;">💾 Quản lý dữ liệu</h3>
+            <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 14px;">
+                Dữ liệu được lưu trực tiếp trên thiết bị của bạn. Xuất file backup định kỳ để tránh mất dữ liệu khi xoá trình duyệt.
+            </p>
+
+            <div class="data-actions">
+                <button class="btn-secondary" onclick="exportDataJSON()">📥 Xuất File JSON</button>
+                <button class="btn-secondary" onclick="document.getElementById('importFileInput').click()">📤 Nhập File Backup</button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importDataJSON(event)">
+            </div>
+            <button class="btn-secondary" style="margin-top: 10px; width: 100%; border-color: rgba(255, 69, 58, 0.4); color: #ff453a;" onclick="clearAllData()">
+                🗑️ Xoá toàn bộ dữ liệu
+            </button>
+        </div>
+    </main>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('workout', this)">
+            <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>
+            Tập luyện
+        </button>
+        <button class="nav-item" onclick="switchTab('progress', this)">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+            Tăng tiến
+        </button>
+        <button class="nav-item" onclick="switchTab('settings', this)">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Dữ liệu
+        </button>
+    </nav>
+
+    <script>
+        // ==========================================
+        // DATA STRUCTURE & CONFIG
+        // ==========================================
+        const exerciseData = {
+            "Push": ["Bench Press", "Incline Bench", "Pec Dec", "Shoulder Press", "Lateral Raise", "Tricep Pushdown", "Khác..."],
+            "Pull": ["Lat Pulldown", "Row", "Seated Cable Row", "Vai Sau", "Preacher Curl", "Incline Curl", "Hammer Curl", "Khác..."],
+            "Leg": ["Squat / Leg Press", "Đùi Trước (Extension)", "Đùi Sau (Curl)", "Hip Thrust", "Bụng", "Bụng Dưới", "Khác..."],
+            "Chest n Back": ["Bench Press", "Incline Bench", "Pec Dec", "Lat Pulldown", "Row", "Seated Cable Row", "Khác..."],
+            "Shoul Tri n Bi": ["Shoulder Press", "Lateral Raise", "Tricep Pushdown", "Preacher Curl", "Incline Curl", "Hammer Curl", "Khác..."]
+        };
+
+        // Danh sách các từ khóa nhận diện bài tập dùng trọng lượng cơ thể (Bodyweight)
+        const BODYWEIGHT_KEYWORDS = ["bụng", "abs", "plank", "crunch", "hít đất", "push up", "hít xà", "pull up", "chin up", "dips", "lunge", "calisthenic"];
+
+        function isBodyweightExercise(name) {
+            if (!name) return false;
+            const lower = name.toLowerCase();
+            return BODYWEIGHT_KEYWORDS.some(kw => lower.includes(kw));
+        }
+
+        const STORAGE_KEY = "gymLogsV4";
+        let logs = [];
+        let selectedDate = new Date(); // Current date being viewed/logged
+        let weekOffset = 0; // 0 = current week, -1 = previous week
+        let chartInstance = null;
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", () => {
+            loadLogsFromStorage();
+            updateExerciseList();
+            renderWeekCalendar();
+            renderDailyLogs();
+            updateWeeklyStreak();
+        });
+
+        function loadLogsFromStorage() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    logs = JSON.parse(stored);
+                } else {
+                    // Try to migrate from gymLogsV3 if exists
+                    const oldLogs = localStorage.getItem("gymLogsV3");
+                    if (oldLogs) {
+                        const parsed = JSON.parse(oldLogs);
+                        logs = parsed.map(l => {
+                            const repArray = (l.reps || "").toString().split(/\s*-\s*|\s*,\s*|\s+/).filter(Boolean);
+                            const w = parseFloat(l.weight) || 0;
+                            const sets = repArray.map(r => ({ weight: w, reps: parseInt(r) || 0 }));
+                            
+                            let isoDate = new Date().toISOString().split('T')[0];
+                            if (l.date && l.date.includes('/')) {
+                                const parts = l.date.split('/');
+                                if (parts.length === 3) {
+                                    isoDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                                }
+                            }
+
+                            return {
+                                id: l.id || Date.now() + Math.random(),
+                                date: isoDate,
+                                day: l.day || "Push",
+                                name: l.name || "Unknown",
+                                unit: l.unit || "kg",
+                                sets: sets.length > 0 ? sets : [{ weight: w, reps: 10 }]
+                            };
+                        });
+                        saveLogsToStorage();
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading logs:", e);
+                logs = [];
+            }
+        }
+
+        function saveLogsToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+        }
+
+        // Helper Date formatting
+        function formatISODate(d) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function formatDisplayDateVN(isoStr) {
+            const [y, m, d] = isoStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        // ==========================================
+        // WEEKLY CALENDAR CONTROLLER
+        // ==========================================
+        function getWeekDays(offset = 0) {
+            const now = new Date();
+            const currentDayOfWeek = (now.getDay() + 6) % 7; // Monday = 0, Sunday = 6
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - currentDayOfWeek + (offset * 7));
+            monday.setHours(0, 0, 0, 0);
+
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(monday);
+                day.setDate(monday.getDate() + i);
+                days.push(day);
+            }
+            return days;
+        }
+
+        function renderWeekCalendar() {
+            const weekGrid = document.getElementById("weekGrid");
+            const weekRangeLabel = document.getElementById("weekRangeLabel");
+            const days = getWeekDays(weekOffset);
+            
+            const startVN = `${days[0].getDate()}/${days[0].getMonth() + 1}`;
+            const endVN = `${days[6].getDate()}/${days[6].getMonth() + 1}/${days[6].getFullYear()}`;
+            weekRangeLabel.textContent = weekOffset === 0 ? `Tuần này (${startVN} - ${endVN})` : `Tuần ${startVN} - ${endVN}`;
+
+            weekGrid.innerHTML = "";
+            const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+            const selectedIso = formatISODate(selectedDate);
+            const todayIso = formatISODate(new Date());
+
+            days.forEach((day, index) => {
+                const dayIso = formatISODate(day);
+                const isSelected = dayIso === selectedIso;
+                const isToday = dayIso === todayIso;
+                const hasWorkout = logs.some(l => l.date === dayIso);
+
+                const pill = document.createElement("div");
+                pill.className = `day-pill ${isSelected ? 'active' : ''} ${isToday ? 'today' : ''}`;
+                pill.onclick = () => selectCalendarDate(day);
+
+                pill.innerHTML = `
+                    <span class="day-name">${dayNames[index]}</span>
+                    <span class="day-number">${day.getDate()}</span>
+                    <span class="day-status-dot ${hasWorkout ? 'completed' : ''}"></span>
+                `;
+                weekGrid.appendChild(pill);
+            });
+        }
+
+        function changeWeek(delta) {
+            weekOffset += delta;
+            renderWeekCalendar();
+        }
+
+        function goToCurrentWeek() {
+            weekOffset = 0;
+            selectedDate = new Date();
+            renderWeekCalendar();
+            renderDailyLogs();
+            checkPreviousWorkout();
+        }
+
+        function selectCalendarDate(dateObj) {
+            selectedDate = dateObj;
+            renderWeekCalendar();
+            renderDailyLogs();
+            checkPreviousWorkout();
+        }
+
+        function updateWeeklyStreak() {
+            const days = getWeekDays(0);
+            let activeDaysCount = 0;
+            days.forEach(d => {
+                const iso = formatISODate(d);
+                if (logs.some(l => l.date === iso)) activeDaysCount++;
+            });
+            document.getElementById("streakBadge").innerHTML = `🔥 <span>${activeDaysCount}/7 ngày tuần này</span>`;
+        }
+
+        // ==========================================
+        // EXERCISE & SET BUILDER (SMART BODYWEIGHT SUPPORT)
+        // ==========================================
+        function onWorkoutDayChange() {
+            updateExerciseList();
+        }
+
+        function updateExerciseList() {
+            const day = document.getElementById("workoutDay").value;
+            const select = document.getElementById("exerciseSelect");
+            select.innerHTML = "";
+            
+            const list = exerciseData[day] || ["Khác..."];
+            list.forEach(ex => {
+                const opt = document.createElement("option");
+                opt.value = ex;
+                opt.textContent = ex;
+                select.appendChild(opt);
+            });
+
+            onExerciseChange();
+        }
+
+        function onExerciseChange() {
+            const selectVal = document.getElementById("exerciseSelect").value;
+            const customInput = document.getElementById("customExerciseInput");
+            if (selectVal === "Khác...") {
+                customInput.style.display = "block";
+            } else {
+                customInput.style.display = "none";
+            }
+            adjustFormForExerciseType();
+            checkPreviousWorkout();
+        }
+
+        function onCustomExerciseInput() {
+            adjustFormForExerciseType();
+            checkPreviousWorkout();
+        }
+
+        function getActiveExerciseName() {
+            const selectVal = document.getElementById("exerciseSelect").value;
+            if (selectVal === "Khác...") {
+                return document.getElementById("customExerciseInput").value.trim();
+            }
+            return selectVal;
+        }
+
+        function adjustFormForExerciseType() {
+            const exName = getActiveExerciseName();
+            const isBw = isBodyweightExercise(exName);
+            const header = document.getElementById("setRowHeader");
+            const headerWeightCol = document.getElementById("headerWeightCol");
+            const unitSelect = document.getElementById("unitSelect");
+            const configLabel = document.getElementById("setsConfigLabel");
+
+            if (isBw) {
+                header.classList.add("bodyweight-mode");
+                headerWeightCol.style.display = "none";
+                unitSelect.style.display = "none";
+                configLabel.textContent = "Chi tiết Sets (Bodyweight - Chỉ Reps)";
+            } else {
+                header.classList.remove("bodyweight-mode");
+                headerWeightCol.style.display = "block";
+                unitSelect.style.display = "block";
+                configLabel.textContent = "Chi tiết Sets & Mức tạ";
+            }
+
+            // Sync all existing set rows
+            const rows = document.querySelectorAll(".set-row");
+            if (rows.length === 0) {
+                initSetRows();
+            } else {
+                rows.forEach(row => {
+                    const weightInp = row.querySelector(".set-weight");
+                    if (isBw) {
+                        row.classList.add("bodyweight-mode");
+                        if (weightInp) weightInp.style.display = "none";
+                    } else {
+                        row.classList.remove("bodyweight-mode");
+                        if (weightInp) weightInp.style.display = "block";
+                    }
+                });
+            }
+        }
+
+        function initSetRows() {
+            const container = document.getElementById("setsContainer");
+            container.innerHTML = "";
+            const isBw = isBodyweightExercise(getActiveExerciseName());
+            const defaultReps = isBw ? 20 : 10;
+            const defaultW = isBw ? 0 : "";
+            // Default 3 sets
+            addSetRow(defaultW, defaultReps);
+            addSetRow(defaultW, defaultReps);
+            addSetRow(defaultW, defaultReps);
+        }
+
+        function addSetRow(weight = "", reps = "") {
+            const container = document.getElementById("setsContainer");
+            const setNum = container.children.length + 1;
+            const isBw = isBodyweightExercise(getActiveExerciseName());
+
+            const row = document.createElement("div");
+            row.className = `set-row ${isBw ? 'bodyweight-mode' : ''}`;
+            row.innerHTML = `
+                <div class="set-index">${setNum}</div>
+                <input type="number" step="0.5" class="set-weight" placeholder="Tạ" value="${weight !== "" ? weight : ""}" style="${isBw ? 'display:none;' : ''}">
+                <input type="number" step="1" class="set-reps" placeholder="Reps" value="${reps !== "" ? reps : ""}">
+                <button type="button" class="btn-del-set" onclick="removeSetRow(this)">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeSetRow(btn) {
+            const container = document.getElementById("setsContainer");
+            if (container.children.length <= 1) {
+                alert("Cần tối thiểu 1 Set!");
+                return;
+            }
+            btn.parentElement.remove();
+            // Reindex set numbers
+            Array.from(container.children).forEach((row, idx) => {
+                row.querySelector(".set-index").textContent = idx + 1;
+            });
+        }
+
+        // ==========================================
+        // PROGRESSION & PREVIOUS WORKOUT LOOKUP
+        // ==========================================
+        let lastWorkoutFound = null;
+
+        function findPreviousWorkout(exerciseName, beforeDateIso) {
+            if (!exerciseName) return null;
+            const matches = logs
+                .filter(l => l.name.toLowerCase() === exerciseName.toLowerCase() && l.date < beforeDateIso)
+                .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+            return matches.length > 0 ? matches[0] : null;
+        }
+
+        function checkPreviousWorkout() {
+            const exName = getActiveExerciseName();
+            const currentIso = formatISODate(selectedDate);
+            const box = document.getElementById("prevWorkoutBox");
+
+            if (!exName) {
+                box.style.display = "none";
+                lastWorkoutFound = null;
+                return;
+            }
+
+            const prev = findPreviousWorkout(exName, currentIso);
+            lastWorkoutFound = prev;
+
+            if (prev && prev.sets && prev.sets.length > 0) {
+                box.style.display = "flex";
+                document.getElementById("prevDateText").textContent = formatDisplayDateVN(prev.date);
+                const isBw = isBodyweightExercise(exName);
+                
+                if (isBw) {
+                    const setsSummaryStr = prev.sets.map(s => `${s.reps} reps`).join(" | ");
+                    const totalReps = prev.sets.reduce((sum, s) => sum + s.reps, 0);
+                    document.getElementById("prevSetsSummary").textContent = setsSummaryStr;
+                    document.getElementById("prevMaxWeight").textContent = `Tổng: ${totalReps} reps`;
+                } else {
+                    const setsSummaryStr = prev.sets.map(s => `${s.weight}${prev.unit || 'kg'}×${s.reps}`).join(" | ");
+                    const maxW = Math.max(...prev.sets.map(s => s.weight));
+                    document.getElementById("prevSetsSummary").textContent = setsSummaryStr;
+                    document.getElementById("prevMaxWeight").textContent = `Max: ${maxW} ${prev.unit || 'kg'}`;
+                }
+            } else {
+                box.style.display = "none";
+            }
+        }
+
+        function copyPreviousSets() {
+            if (!lastWorkoutFound || !lastWorkoutFound.sets) return;
+            const container = document.getElementById("setsContainer");
+            container.innerHTML = "";
+            lastWorkoutFound.sets.forEach(s => {
+                addSetRow(s.weight, s.reps);
+            });
+            if (lastWorkoutFound.unit) {
+                document.getElementById("unitSelect").value = lastWorkoutFound.unit;
+            }
+        }
+
+        // Compare Current Log vs Previous Log for Progression Badge
+        function evaluateProgression(currentSets, prevLog, isBw = false) {
+            if (!prevLog || !prevLog.sets || prevLog.sets.length === 0) {
+                return { type: 'new', label: '🆕 Lần đầu tập', class: 'prog-equal' };
+            }
+
+            const curTotalReps = currentSets.reduce((sum, s) => sum + s.reps, 0);
+            const prevTotalReps = prevLog.sets.reduce((sum, s) => sum + s.reps, 0);
+
+            if (isBw) {
+                const repDiff = curTotalReps - prevTotalReps;
+                const curMaxRep = Math.max(...currentSets.map(s => s.reps));
+                const allTimeMaxRep = Math.max(...logs.filter(l => l.name.toLowerCase() === prevLog.name.toLowerCase())
+                    .flatMap(l => l.sets.map(s => s.reps)), 0);
+
+                if (curMaxRep > allTimeMaxRep && allTimeMaxRep > 0) {
+                    return { type: 'pr', label: `🏆 Kỷ lục Set: ${curMaxRep} Reps!`, class: 'prog-pr' };
+                }
+
+                if (repDiff > 0) {
+                    return { type: 'up', label: `▲ Tăng Reps: +${repDiff} reps`, class: 'prog-up' };
+                } else if (repDiff < 0) {
+                    return { type: 'down', label: `▼ Giảm Reps: ${repDiff} reps`, class: 'prog-down' };
+                } else {
+                    return { type: 'equal', label: `⚖ Giữ vững số Reps`, class: 'prog-equal' };
+                }
+            }
+
+            const curMaxWeight = Math.max(...currentSets.map(s => s.weight));
+            const prevMaxWeight = Math.max(...prevLog.sets.map(s => s.weight));
+
+            const curVolume = currentSets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+            const prevVolume = prevLog.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+
+            // Check all time PR
+            const allTimeMaxWeight = Math.max(...logs.filter(l => l.name.toLowerCase() === prevLog.name.toLowerCase())
+                .flatMap(l => l.sets.map(s => s.weight)), 0);
+
+            if (curMaxWeight > allTimeMaxWeight && allTimeMaxWeight > 0) {
+                return { type: 'pr', label: `🏆 Kỷ lục mới: ${curMaxWeight}kg!`, class: 'prog-pr' };
+            }
+
+            const weightDiff = (curMaxWeight - prevMaxWeight).toFixed(1).replace('.0', '');
+            const volumeDiff = Math.round(curVolume - prevVolume);
+
+            if (curMaxWeight > prevMaxWeight) {
+                return { type: 'up', label: `▲ Tăng tạ: +${weightDiff}kg (+${volumeDiff}kg Vol)`, class: 'prog-up' };
+            } else if (curMaxWeight < prevMaxWeight) {
+                return { type: 'down', label: `▼ Giảm tạ: ${weightDiff}kg`, class: 'prog-down' };
+            } else {
+                if (volumeDiff > 0) {
+                    return { type: 'up', label: `▲ Tăng Volume: +${volumeDiff}kg`, class: 'prog-up' };
+                } else if (volumeDiff < 0) {
+                    return { type: 'down', label: `▼ Giảm Volume: ${volumeDiff}kg`, class: 'prog-down' };
+                } else {
+                    return { type: 'equal', label: `⚖ Giữ vững mức cũ`, class: 'prog-equal' };
+                }
+            }
+        }
+
+        // ==========================================
+        // LOG CRUD & RENDERING
+        // ==========================================
+        function saveWorkoutLog() {
+            const workoutDay = document.getElementById("workoutDay").value;
+            const exerciseName = getActiveExerciseName();
+
+            if (!exerciseName) {
+                alert("Vui lòng chọn hoặc nhập tên bài tập!");
+                return;
+            }
+
+            const isBw = isBodyweightExercise(exerciseName);
+            const unit = document.getElementById("unitSelect").value;
+            const container = document.getElementById("setsContainer");
+            const rows = Array.from(container.children);
+            
+            const sets = [];
+            for (let row of rows) {
+                const r = parseInt(row.querySelector(".set-reps").value);
+                let w = 0;
+                if (!isBw) {
+                    w = parseFloat(row.querySelector(".set-weight").value);
+                    if (isNaN(w) || isNaN(r)) {
+                        alert("Vui lòng điền đầy đủ mức tạ và số Reps cho tất cả các Set!");
+                        return;
+                    }
+                } else {
+                    if (isNaN(r) || r <= 0) {
+                        alert("Vui lòng điền số Reps hợp lệ cho tất cả các Set!");
+                        return;
+                    }
+                }
+                sets.push({ weight: w, reps: r });
+            }
+
+            if (sets.length === 0) {
+                alert("Cần có ít nhất 1 Set!");
+                return;
+            }
+
+            const dateIso = formatISODate(selectedDate);
+            const newLog = {
+                id: Date.now(),
+                date: dateIso,
+                day: workoutDay,
+                name: exerciseName,
+                unit: isBw ? "" : unit,
+                sets: sets
+            };
+
+            logs.unshift(newLog);
+            saveLogsToStorage();
+
+            // Refresh UI
+            renderDailyLogs();
+            renderWeekCalendar();
+            updateWeeklyStreak();
+            checkPreviousWorkout();
+
+            // Notify subtle
+            const prog = evaluateProgression(sets, lastWorkoutFound, isBw);
+            alert(`Đã lưu ${exerciseName}! [${prog.label}]`);
+        }
+
+        function deleteLog(id) {
+            if (!confirm("Bạn có chắc chắn muốn xoá bài tập này?")) return;
+            logs = logs.filter(l => l.id !== id);
+            saveLogsToStorage();
+            renderDailyLogs();
+            renderWeekCalendar();
+            updateWeeklyStreak();
+            checkPreviousWorkout();
+            if (document.getElementById("tab-progress").classList.contains("active")) {
+                populateProgressExercises();
+                renderProgressChart();
+            }
+        }
+
+        function renderDailyLogs() {
+            const currentIso = formatISODate(selectedDate);
+            const listEl = document.getElementById("dailyLogList");
+            const titleEl = document.getElementById("currentSelectedDateTitle");
+            const volumeEl = document.getElementById("dailyTotalVolume");
+
+            const todayIso = formatISODate(new Date());
+            titleEl.textContent = currentIso === todayIso ? `📅 Bài tập hôm nay (${formatDisplayDateVN(currentIso)})` : `📅 Bài tập ngày ${formatDisplayDateVN(currentIso)}`;
+
+            const dayLogs = logs.filter(l => l.date === currentIso);
+
+            if (dayLogs.length === 0) {
+                volumeEl.textContent = "";
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        <p>Chưa có bài tập nào được lưu cho ngày này.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let totalVol = 0;
+            let totalBwReps = 0;
+            listEl.innerHTML = "";
+
+            dayLogs.forEach(log => {
+                const isBw = isBodyweightExercise(log.name);
+                const prev = findPreviousWorkout(log.name, log.date);
+                const prog = evaluateProgression(log.sets, prev, isBw);
+                
+                const card = document.createElement("div");
+                card.className = "log-item";
+
+                let metaText = "";
+                let setsChips = "";
+
+                if (isBw) {
+                    const sumReps = log.sets.reduce((sum, s) => sum + s.reps, 0);
+                    totalBwReps += sumReps;
+                    metaText = `${log.day} • Tổng: ${sumReps} Reps (Bodyweight)`;
+                    setsChips = log.sets.map((s, idx) => `
+                        <div class="set-chip">
+                            S${idx + 1}: <strong>${s.reps} reps</strong>
+                        </div>
+                    `).join("");
+                } else {
+                    const logVol = log.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+                    totalVol += logVol;
+                    metaText = `${log.day} • Vol: ${logVol.toLocaleString()} ${log.unit || 'kg'}`;
+                    setsChips = log.sets.map((s, idx) => `
+                        <div class="set-chip">
+                            S${idx + 1}: <strong>${s.weight}${log.unit || 'kg'}</strong> × <strong>${s.reps}</strong>
+                        </div>
+                    `).join("");
+                }
+
+                card.innerHTML = `
+                    <div class="log-item-top">
+                        <div>
+                            <div class="log-item-name">${log.name}</div>
+                            <div class="log-item-meta">${metaText}</div>
+                        </div>
+                        <button class="btn-delete-log" onclick="deleteLog(${log.id})">✕</button>
+                    </div>
+                    <div>
+                        <span class="log-progression-badge ${prog.class}">
+                            ${prog.label}
+                        </span>
+                    </div>
+                    <div class="log-sets-summary">
+                        ${setsChips}
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+
+            const volTexts = [];
+            if (totalVol > 0) volTexts.push(`Tạ: ${totalVol.toLocaleString()} kg`);
+            if (totalBwReps > 0) volTexts.push(`Bodyweight: ${totalBwReps} Reps`);
+            volumeEl.textContent = volTexts.join(" | ");
+        }
+
+        // ==========================================
+        // PROGRESSION TAB & CHARTS
+        // ==========================================
+        function populateProgressExercises() {
+            const select = document.getElementById("progressExerciseSelect");
+            const names = Array.from(new Set(logs.map(l => l.name))).sort();
+            
+            select.innerHTML = "";
+            if (names.length === 0) {
+                select.innerHTML = "<option value=''>Chưa có dữ liệu bài tập</option>";
+                return;
+            }
+
+            names.forEach(name => {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
+            });
+        }
+
+        function renderProgressChart() {
+            const exName = document.getElementById("progressExerciseSelect").value;
+            const historyList = document.getElementById("exerciseHistoryList");
+            const statMaxWeight = document.getElementById("statMaxWeight");
+            const statMaxVolume = document.getElementById("statMaxVolume");
+            const stat1Label = document.getElementById("stat1Label");
+            const stat2Label = document.getElementById("stat2Label");
+
+            if (!exName) {
+                statMaxWeight.textContent = "0";
+                statMaxVolume.textContent = "0";
+                historyList.innerHTML = "<p class='empty-state'>Chưa có dữ liệu bài tập.</p>";
+                if (chartInstance) chartInstance.destroy();
+                return;
+            }
+
+            const isBw = isBodyweightExercise(exName);
+
+            // Get exercise logs sorted oldest to newest for chart
+            const exLogs = logs
+                .filter(l => l.name.toLowerCase() === exName.toLowerCase())
+                .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+
+            if (exLogs.length === 0) return;
+
+            const labels = exLogs.map(l => formatDisplayDateVN(l.date));
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            if (isBw) {
+                stat1Label.textContent = "Max Reps 1 Set";
+                stat2Label.textContent = "Tổng Reps cao nhất";
+
+                const maxRepPerSet = Math.max(...exLogs.flatMap(l => l.sets.map(s => s.reps)));
+                const maxTotalReps = Math.max(...exLogs.map(l => l.sets.reduce((sum, s) => sum + s.reps, 0)));
+                statMaxWeight.textContent = `${maxRepPerSet} reps`;
+                statMaxVolume.textContent = `${maxTotalReps} reps`;
+
+                const totalRepsPoints = exLogs.map(l => l.sets.reduce((sum, s) => sum + s.reps, 0));
+                const maxRepsPoints = exLogs.map(l => Math.max(...l.sets.map(s => s.reps)));
+
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Tổng số Reps',
+                                data: totalRepsPoints,
+                                borderColor: '#30d158',
+                                backgroundColor: 'rgba(48, 209, 88, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Max Reps / Set',
+                                data: maxRepsPoints,
+                                borderColor: '#ffd60a',
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: '#8e8e93', font: { size: 11, weight: '600' } } }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#8e8e93', font: { size: 10 } }, grid: { color: '#2c2c2e' } },
+                            y: { ticks: { color: '#30d158', font: { size: 10 } }, grid: { color: '#2c2c2e' } }
+                        }
+                    }
+                });
+            } else {
+                stat1Label.textContent = "Kỷ lục tạ (PR)";
+                stat2Label.textContent = "Tổng Volume cao nhất";
+
+                const maxW = Math.max(...exLogs.flatMap(l => l.sets.map(s => s.weight)));
+                const maxVol = Math.max(...exLogs.map(l => l.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0)));
+                statMaxWeight.textContent = `${maxW} kg`;
+                statMaxVolume.textContent = `${maxVol.toLocaleString()} kg`;
+
+                const maxWeightPoints = exLogs.map(l => Math.max(...l.sets.map(s => s.weight)));
+                const volumePoints = exLogs.map(l => l.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0));
+
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Mức tạ cao nhất (kg)',
+                                data: maxWeightPoints,
+                                borderColor: '#ff453a',
+                                backgroundColor: 'rgba(255, 69, 58, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.3,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Tổng Volume (kg)',
+                                data: volumePoints,
+                                borderColor: '#ffd60a',
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: '#8e8e93', font: { size: 11, weight: '600' } } }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#8e8e93', font: { size: 10 } }, grid: { color: '#2c2c2e' } },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                ticks: { color: '#ff453a', font: { size: 10 } },
+                                grid: { color: '#2c2c2e' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                ticks: { color: '#ffd60a', font: { size: 10 } },
+                                grid: { drawOnChartArea: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Detailed history list (newest first)
+            historyList.innerHTML = "";
+            const revLogs = [...exLogs].reverse();
+            revLogs.forEach(log => {
+                const card = document.createElement("div");
+                card.className = "log-item";
+                
+                let metaText = "";
+                let setsChips = "";
+                if (isBw) {
+                    const sumReps = log.sets.reduce((sum, s) => sum + s.reps, 0);
+                    metaText = `${log.day} • Tổng: ${sumReps} Reps`;
+                    setsChips = log.sets.map((s, idx) => `
+                        <div class="set-chip">S${idx + 1}: <strong>${s.reps} reps</strong></div>
+                    `).join("");
+                } else {
+                    const totalVol = log.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+                    metaText = `${log.day} • Vol: ${totalVol.toLocaleString()} ${log.unit || 'kg'}`;
+                    setsChips = log.sets.map((s, idx) => `
+                        <div class="set-chip">S${idx + 1}: <strong>${s.weight}kg</strong> × <strong>${s.reps}</strong></div>
+                    `).join("");
+                }
+
+                card.innerHTML = `
+                    <div class="log-item-top">
+                        <div>
+                            <div class="log-item-name">${formatDisplayDateVN(log.date)}</div>
+                            <div class="log-item-meta">${metaText}</div>
+                        </div>
+                    </div>
+                    <div class="log-sets-summary">${setsChips}</div>
+                `;
+                historyList.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // TAB SWITCHING & SETTINGS
+        // ==========================================
+        function switchTab(tabId, btn) {
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+            document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+
+            document.getElementById(`tab-${tabId}`).classList.add("active");
+            btn.classList.add("active");
+
+            if (tabId === "progress") {
+                populateProgressExercises();
+                renderProgressChart();
+            } else if (tabId === "settings") {
+                updateSettingsStats();
+            }
+        }
+
+        function updateSettingsStats() {
+            const uniqueDates = new Set(logs.map(l => l.date));
+            document.getElementById("statTotalWorkouts").textContent = uniqueDates.size;
+            document.getElementById("statTotalExercises").textContent = logs.length;
+        }
+
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `gym_tracker_backup_${formatISODate(new Date())}.json`);
+            dlAnchor.click();
+        }
+
+        function importDataJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        logs = imported;
+                        saveLogsToStorage();
+                        renderDailyLogs();
+                        renderWeekCalendar();
+                        updateWeeklyStreak();
+                        updateSettingsStats();
+                        alert("Nhập dữ liệu thành công!");
+                    } else {
+                        alert("File không đúng định dạng JSON hợp lệ!");
+                    }
+                } catch (err) {
+                    alert("Lỗi khi đọc file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if (confirm("CẢNH BÁO: Hành động này sẽ xoá toàn bộ lịch sử tập luyện! Bạn có chắc chắn không?")) {
+                logs = [];
+                saveLogsToStorage();
+                renderDailyLogs();
+                renderWeekCalendar();
+                updateWeeklyStreak();
+                updateSettingsStats();
+                alert("Đã xoá sạch dữ liệu!");
+            }
+        }
+    </script>
+</body>
+</html>
