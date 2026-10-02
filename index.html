@@ -1157,11 +1157,12 @@
         }
 
         // Compare Current Log vs Previous Log for Progression Badge
-        function evaluateProgression(currentSets, prevLog, isBw = false) {
+        function evaluateProgression(currentSets, prevLog, isBw = false, currentUnit = "kg") {
             if (!prevLog || !prevLog.sets || prevLog.sets.length === 0) {
                 return { type: 'new', label: '🆕 Lần đầu tập', class: 'prog-equal' };
             }
 
+            const unitStr = currentUnit || prevLog.unit || "kg";
             const curTotalReps = currentSets.reduce((sum, s) => sum + s.reps, 0);
             const prevTotalReps = prevLog.sets.reduce((sum, s) => sum + s.reps, 0);
 
@@ -1195,21 +1196,21 @@
                 .flatMap(l => l.sets.map(s => s.weight)), 0);
 
             if (curMaxWeight > allTimeMaxWeight && allTimeMaxWeight > 0) {
-                return { type: 'pr', label: `🏆 Kỷ lục mới: ${curMaxWeight}kg!`, class: 'prog-pr' };
+                return { type: 'pr', label: `🏆 Kỷ lục mới: ${curMaxWeight} ${unitStr}!`, class: 'prog-pr' };
             }
 
             const weightDiff = (curMaxWeight - prevMaxWeight).toFixed(1).replace('.0', '');
             const volumeDiff = Math.round(curVolume - prevVolume);
 
             if (curMaxWeight > prevMaxWeight) {
-                return { type: 'up', label: `▲ Tăng tạ: +${weightDiff}kg (+${volumeDiff}kg Vol)`, class: 'prog-up' };
+                return { type: 'up', label: `▲ Tăng tạ: +${weightDiff} ${unitStr} (+${volumeDiff.toLocaleString()} ${unitStr} Vol)`, class: 'prog-up' };
             } else if (curMaxWeight < prevMaxWeight) {
-                return { type: 'down', label: `▼ Giảm tạ: ${weightDiff}kg`, class: 'prog-down' };
+                return { type: 'down', label: `▼ Giảm tạ: ${weightDiff} ${unitStr}`, class: 'prog-down' };
             } else {
                 if (volumeDiff > 0) {
-                    return { type: 'up', label: `▲ Tăng Volume: +${volumeDiff}kg`, class: 'prog-up' };
+                    return { type: 'up', label: `▲ Tăng Volume: +${volumeDiff.toLocaleString()} ${unitStr}`, class: 'prog-up' };
                 } else if (volumeDiff < 0) {
-                    return { type: 'down', label: `▼ Giảm Volume: ${volumeDiff}kg`, class: 'prog-down' };
+                    return { type: 'down', label: `▼ Giảm Volume: ${volumeDiff.toLocaleString()} ${unitStr}`, class: 'prog-down' };
                 } else {
                     return { type: 'equal', label: `⚖ Giữ vững mức cũ`, class: 'prog-equal' };
                 }
@@ -1277,7 +1278,7 @@
             checkPreviousWorkout();
 
             // Notify subtle
-            const prog = evaluateProgression(sets, lastWorkoutFound, isBw);
+            const prog = evaluateProgression(sets, lastWorkoutFound, isBw, isBw ? "" : unit);
             alert(`Đã lưu ${exerciseName}! [${prog.label}]`);
         }
 
@@ -1317,14 +1318,15 @@
                 return;
             }
 
-            let totalVol = 0;
+            let volKg = 0;
+            let volLbs = 0;
             let totalBwReps = 0;
             listEl.innerHTML = "";
 
             dayLogs.forEach(log => {
                 const isBw = isBodyweightExercise(log.name);
                 const prev = findPreviousWorkout(log.name, log.date);
-                const prog = evaluateProgression(log.sets, prev, isBw);
+                const prog = evaluateProgression(log.sets, prev, isBw, log.unit || "kg");
                 
                 const card = document.createElement("div");
                 card.className = "log-item";
@@ -1343,11 +1345,16 @@
                     `).join("");
                 } else {
                     const logVol = log.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
-                    totalVol += logVol;
-                    metaText = `${log.day} • Vol: ${logVol.toLocaleString()} ${log.unit || 'kg'}`;
+                    const unitStr = log.unit || 'kg';
+                    if (unitStr === 'lbs') {
+                        volLbs += logVol;
+                    } else {
+                        volKg += logVol;
+                    }
+                    metaText = `${log.day} • Vol: ${logVol.toLocaleString()} ${unitStr}`;
                     setsChips = log.sets.map((s, idx) => `
                         <div class="set-chip">
-                            S${idx + 1}: <strong>${s.weight}${log.unit || 'kg'}</strong> × <strong>${s.reps}</strong>
+                            S${idx + 1}: <strong>${s.weight}${unitStr}</strong> × <strong>${s.reps}</strong>
                         </div>
                     `).join("");
                 }
@@ -1373,7 +1380,8 @@
             });
 
             const volTexts = [];
-            if (totalVol > 0) volTexts.push(`Tạ: ${totalVol.toLocaleString()} kg`);
+            if (volKg > 0) volTexts.push(`Tạ: ${volKg.toLocaleString()} kg`);
+            if (volLbs > 0) volTexts.push(`Tạ: ${volLbs.toLocaleString()} lbs`);
             if (totalBwReps > 0) volTexts.push(`Bodyweight: ${totalBwReps} Reps`);
             volumeEl.textContent = volTexts.join(" | ");
         }
@@ -1479,13 +1487,14 @@
                     }
                 });
             } else {
-                stat1Label.textContent = "Kỷ lục tạ (PR)";
-                stat2Label.textContent = "Tổng Volume cao nhất";
+                const latestUnit = exLogs[exLogs.length - 1].unit || 'kg';
+                stat1Label.textContent = `Kỷ lục tạ (${latestUnit})`;
+                stat2Label.textContent = `Tổng Volume cao nhất (${latestUnit})`;
 
                 const maxW = Math.max(...exLogs.flatMap(l => l.sets.map(s => s.weight)));
                 const maxVol = Math.max(...exLogs.map(l => l.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0)));
-                statMaxWeight.textContent = `${maxW} kg`;
-                statMaxVolume.textContent = `${maxVol.toLocaleString()} kg`;
+                statMaxWeight.textContent = `${maxW} ${latestUnit}`;
+                statMaxVolume.textContent = `${maxVol.toLocaleString()} ${latestUnit}`;
 
                 const maxWeightPoints = exLogs.map(l => Math.max(...l.sets.map(s => s.weight)));
                 const volumePoints = exLogs.map(l => l.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0));
@@ -1496,7 +1505,7 @@
                         labels: labels,
                         datasets: [
                             {
-                                label: 'Mức tạ cao nhất (kg)',
+                                label: `Mức tạ cao nhất (${latestUnit})`,
                                 data: maxWeightPoints,
                                 borderColor: '#ff453a',
                                 backgroundColor: 'rgba(255, 69, 58, 0.1)',
@@ -1506,7 +1515,7 @@
                                 yAxisID: 'y'
                             },
                             {
-                                label: 'Tổng Volume (kg)',
+                                label: `Tổng Volume (${latestUnit})`,
                                 data: volumePoints,
                                 borderColor: '#ffd60a',
                                 borderDash: [5, 5],
@@ -1562,9 +1571,10 @@
                     `).join("");
                 } else {
                     const totalVol = log.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
-                    metaText = `${log.day} • Vol: ${totalVol.toLocaleString()} ${log.unit || 'kg'}`;
+                    const unitStr = log.unit || 'kg';
+                    metaText = `${log.day} • Vol: ${totalVol.toLocaleString()} ${unitStr}`;
                     setsChips = log.sets.map((s, idx) => `
-                        <div class="set-chip">S${idx + 1}: <strong>${s.weight}kg</strong> × <strong>${s.reps}</strong></div>
+                        <div class="set-chip">S${idx + 1}: <strong>${s.weight}${unitStr}</strong> × <strong>${s.reps}</strong></div>
                     `).join("");
                 }
 
