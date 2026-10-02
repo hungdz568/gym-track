@@ -1832,12 +1832,51 @@
             document.getElementById("statTotalExercises").textContent = logs.length;
         }
 
-        function exportDataJSON() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `gym_tracker_backup_${formatISODate(new Date())}.json`);
-            dlAnchor.click();
+        async function exportDataJSON() {
+            const dataString = JSON.stringify(logs, null, 2);
+            const fileName = `gym_tracker_backup_${formatISODate(new Date())}.json`;
+
+            // 1. Ưu tiên mở menu Chia sẻ của điện thoại (iOS Safari: Lưu vào Tệp / Gửi Zalo / Drive)
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const blob = new Blob([dataString], { type: "application/json" });
+                    const file = new File([blob], fileName, { type: "application/json" });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: "Gym Tracker Backup",
+                            text: "File sao lưu dữ liệu Gym Tracker"
+                        });
+                        return;
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // Người dùng bấm Hủy
+                }
+            }
+
+            // 2. Tải file chuẩn bằng Blob URL (Android & PC)
+            try {
+                const blob = new Blob([dataString], { type: "application/json;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const dlAnchor = document.createElement('a');
+                dlAnchor.href = url;
+                dlAnchor.download = fileName;
+                dlAnchor.style.display = "none";
+                document.body.appendChild(dlAnchor);
+                dlAnchor.click();
+                setTimeout(() => {
+                    document.body.removeChild(dlAnchor);
+                    URL.revokeObjectURL(url);
+                }, 1500);
+            } catch (e) {
+                // 3. Fallback: Copy trực tiếp vào bộ nhớ tạm nếu trình duyệt chặn
+                try {
+                    await navigator.clipboard.writeText(dataString);
+                    alert("Đã sao chép dữ liệu JSON vào bộ nhớ tạm (Clipboard) của bạn!");
+                } catch (clipErr) {
+                    alert("Vui lòng mở trang web trên trình duyệt Safari/Chrome chính thức.");
+                }
+            }
         }
 
         function importDataJSON(event) {
