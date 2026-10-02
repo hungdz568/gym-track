@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -186,7 +187,8 @@
             letter-spacing: 0.5px;
         }
 
-        select, input {
+        select,
+        input {
             background-color: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
@@ -198,7 +200,8 @@
             transition: border-color 0.2s;
         }
 
-        select:focus, input:focus {
+        select:focus,
+        input:focus {
             border-color: var(--accent);
         }
 
@@ -473,17 +476,71 @@
             color: var(--text);
         }
 
-        .btn-delete-log {
+        .log-actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .btn-action-log {
             background: none;
             border: none;
             color: var(--text-dim);
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
-            padding: 2px 6px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-action-log:hover {
+            color: var(--text);
+            background: var(--input-bg);
         }
 
         .btn-delete-log:hover {
-            color: var(--accent);
+            color: var(--accent) !important;
+        }
+
+        .btn-edit-log:hover {
+            color: #ffd60a !important;
+        }
+
+        .badge-1rm {
+            font-size: 11px;
+            font-weight: 700;
+            color: #ff9f0a;
+            background: rgba(255, 159, 10, 0.12);
+            border: 1px solid rgba(255, 159, 10, 0.25);
+            padding: 2px 7px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .editing-mode-banner {
+            background: rgba(255, 214, 10, 0.15);
+            border: 1px solid rgba(255, 214, 10, 0.35);
+            color: #ffd60a;
+            border-radius: var(--radius-md);
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-cancel-edit {
+            background: none;
+            border: 1px solid #ffd60a;
+            color: #ffd60a;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 11px;
+            cursor: pointer;
         }
 
         /* PROGRESSION TAB */
@@ -602,6 +659,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- APP HEADER -->
@@ -633,6 +691,12 @@
     <main id="tab-workout" class="tab-content active">
         <!-- FORM CARD -->
         <div class="card">
+            <!-- EDITING MODE BANNER -->
+            <div id="editingBanner" class="editing-mode-banner" style="display: none;">
+                <span>✏️ Đang chỉnh sửa bài tập...</span>
+                <button type="button" class="btn-cancel-edit" onclick="cancelEditMode()">Hủy sửa</button>
+            </div>
+
             <div class="form-group">
                 <label>Buổi tập</label>
                 <select id="workoutDay" onchange="onWorkoutDayChange()">
@@ -649,7 +713,8 @@
                 <select id="exerciseSelect" onchange="onExerciseChange()">
                     <!-- Options loaded by JS -->
                 </select>
-                <input type="text" id="customExerciseInput" placeholder="Nhập tên bài tập mới..." style="display: none; margin-top: 8px;" oninput="onCustomExerciseInput()">
+                <input type="text" id="customExerciseInput" placeholder="Nhập tên bài tập mới..."
+                    style="display: none; margin-top: 8px;" oninput="onCustomExerciseInput()">
             </div>
 
             <!-- PREVIOUS WORKOUT INSIGHT BANNER -->
@@ -689,7 +754,7 @@
                 </button>
             </div>
 
-            <button class="btn-save-log" onclick="saveWorkoutLog()">
+            <button class="btn-save-log" id="saveWorkoutLogBtn" onclick="saveWorkoutLog()">
                 💾 LƯU BÀI TẬP VÀO NHẬT KÝ
             </button>
         </div>
@@ -761,15 +826,20 @@
         <div class="card">
             <h3 style="font-size: 16px; margin-bottom: 6px;">💾 Quản lý dữ liệu</h3>
             <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 14px;">
-                Dữ liệu được lưu trực tiếp trên thiết bị của bạn. Xuất file backup định kỳ để tránh mất dữ liệu khi xoá trình duyệt.
+                Dữ liệu được lưu trực tiếp trên thiết bị của bạn. Xuất file backup định kỳ để tránh mất dữ liệu khi xoá
+                trình duyệt.
             </p>
 
             <div class="data-actions">
                 <button class="btn-secondary" onclick="exportDataJSON()">📥 Xuất File JSON</button>
-                <button class="btn-secondary" onclick="document.getElementById('importFileInput').click()">📤 Nhập File Backup</button>
-                <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importDataJSON(event)">
+                <button class="btn-secondary" onclick="document.getElementById('importFileInput').click()">📤 Nhập File
+                    Backup</button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;"
+                    onchange="importDataJSON(event)">
             </div>
-            <button class="btn-secondary" style="margin-top: 10px; width: 100%; border-color: rgba(255, 69, 58, 0.4); color: #ff453a;" onclick="clearAllData()">
+            <button class="btn-secondary"
+                style="margin-top: 10px; width: 100%; border-color: rgba(255, 69, 58, 0.4); color: #ff453a;"
+                onclick="clearAllData()">
                 🗑️ Xoá toàn bộ dữ liệu
             </button>
         </div>
@@ -778,15 +848,23 @@
     <!-- BOTTOM NAVIGATION -->
     <nav class="bottom-nav">
         <button class="nav-item active" onclick="switchTab('workout', this)">
-            <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z" />
+            </svg>
             Tập luyện
         </button>
         <button class="nav-item" onclick="switchTab('progress', this)">
-            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
+            </svg>
             Tăng tiến
         </button>
         <button class="nav-item" onclick="switchTab('settings', this)">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+            </svg>
             Dữ liệu
         </button>
     </nav>
@@ -843,7 +921,7 @@
                             const repArray = (l.reps || "").toString().split(/\s*-\s*|\s*,\s*|\s+/).filter(Boolean);
                             const w = parseFloat(l.weight) || 0;
                             const sets = repArray.map(r => ({ weight: w, reps: parseInt(r) || 0 }));
-                            
+
                             let isoDate = new Date().toISOString().split('T')[0];
                             if (l.date && l.date.includes('/')) {
                                 const parts = l.date.split('/');
@@ -910,7 +988,7 @@
             const weekGrid = document.getElementById("weekGrid");
             const weekRangeLabel = document.getElementById("weekRangeLabel");
             const days = getWeekDays(weekOffset);
-            
+
             const startVN = `${days[0].getDate()}/${days[0].getMonth() + 1}`;
             const endVN = `${days[6].getDate()}/${days[6].getMonth() + 1}/${days[6].getFullYear()}`;
             weekRangeLabel.textContent = weekOffset === 0 ? `Tuần này (${startVN} - ${endVN})` : `Tuần ${startVN} - ${endVN}`;
@@ -980,7 +1058,7 @@
             const day = document.getElementById("workoutDay").value;
             const select = document.getElementById("exerciseSelect");
             select.innerHTML = "";
-            
+
             const list = exerciseData[day] || ["Khác..."];
             list.forEach(ex => {
                 const opt = document.createElement("option");
@@ -1127,7 +1205,7 @@
                 box.style.display = "flex";
                 document.getElementById("prevDateText").textContent = formatDisplayDateVN(prev.date);
                 const isBw = isBodyweightExercise(exName);
-                
+
                 if (isBw) {
                     const setsSummaryStr = prev.sets.map(s => `${s.reps} reps`).join(" | ");
                     const totalReps = prev.sets.reduce((sum, s) => sum + s.reps, 0);
@@ -1154,6 +1232,31 @@
             if (lastWorkoutFound.unit) {
                 document.getElementById("unitSelect").value = lastWorkoutFound.unit;
             }
+        }
+
+        let editingLogId = null; // ID of log currently being edited
+
+        // Công thức tính 1RM ước tính (Epley Formula): 1RM = Weight * (1 + Reps / 30)
+        function calculateEstimated1RM(sets) {
+            if (!sets || sets.length === 0) return 0;
+            let max1RM = 0;
+            sets.forEach(s => {
+                const w = parseFloat(s.weight) || 0;
+                const r = parseInt(s.reps) || 0;
+                if (w > 0 && r > 0) {
+                    const e1rm = r === 1 ? w : w * (1 + r / 30);
+                    if (e1rm > max1RM) max1RM = e1rm;
+                }
+            });
+            return Math.round(max1RM * 10) / 10;
+        }
+
+        // Quy đổi tạ tương đương khi khác đơn vị để so sánh chính xác
+        function convertWeight(weight, fromUnit, toUnit) {
+            if (fromUnit === toUnit) return weight;
+            if (fromUnit === "kg" && toUnit === "lbs") return weight * 2.20462;
+            if (fromUnit === "lbs" && toUnit === "kg") return weight / 2.20462;
+            return weight;
         }
 
         // Compare Current Log vs Previous Log for Progression Badge
@@ -1185,18 +1288,29 @@
                 }
             }
 
+            // Quy đổi tạ của lần trước về cùng hệ đơn vị hiện tại để so sánh
+            const prevUnit = prevLog.unit || "kg";
+            const prevSetsNormalized = prevLog.sets.map(s => ({
+                weight: convertWeight(s.weight, prevUnit, unitStr),
+                reps: s.reps
+            }));
+
             const curMaxWeight = Math.max(...currentSets.map(s => s.weight));
-            const prevMaxWeight = Math.max(...prevLog.sets.map(s => s.weight));
+            const prevMaxWeight = Math.max(...prevSetsNormalized.map(s => s.weight));
 
             const curVolume = currentSets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
-            const prevVolume = prevLog.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+            const prevVolume = prevSetsNormalized.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+
+            // 1RM So sánh sức mạnh tối đa
+            const cur1RM = calculateEstimated1RM(currentSets);
+            const prev1RM = calculateEstimated1RM(prevSetsNormalized);
 
             // Check all time PR
-            const allTimeMaxWeight = Math.max(...logs.filter(l => l.name.toLowerCase() === prevLog.name.toLowerCase())
-                .flatMap(l => l.sets.map(s => s.weight)), 0);
+            const allTimeMaxWeight = Math.max(...logs.filter(l => l.name.toLowerCase() === prevLog.name.toLowerCase() && l.id !== editingLogId)
+                .flatMap(l => l.sets.map(s => convertWeight(s.weight, l.unit || "kg", unitStr))), 0);
 
             if (curMaxWeight > allTimeMaxWeight && allTimeMaxWeight > 0) {
-                return { type: 'pr', label: `🏆 Kỷ lục mới: ${curMaxWeight} ${unitStr}!`, class: 'prog-pr' };
+                return { type: 'pr', label: `🏆 Kỷ lục tạ mới: ${curMaxWeight} ${unitStr}!`, class: 'prog-pr' };
             }
 
             const weightDiff = (curMaxWeight - prevMaxWeight).toFixed(1).replace('.0', '');
@@ -1205,6 +1319,9 @@
             if (curMaxWeight > prevMaxWeight) {
                 return { type: 'up', label: `▲ Tăng tạ: +${weightDiff} ${unitStr} (+${volumeDiff.toLocaleString()} ${unitStr} Vol)`, class: 'prog-up' };
             } else if (curMaxWeight < prevMaxWeight) {
+                if (cur1RM > prev1RM) {
+                    return { type: 'up', label: `▲ Sức mạnh 1RM tăng (+${(cur1RM - prev1RM).toFixed(1)} ${unitStr})`, class: 'prog-up' };
+                }
                 return { type: 'down', label: `▼ Giảm tạ: ${weightDiff} ${unitStr}`, class: 'prog-down' };
             } else {
                 if (volumeDiff > 0) {
@@ -1233,7 +1350,7 @@
             const unit = document.getElementById("unitSelect").value;
             const container = document.getElementById("setsContainer");
             const rows = Array.from(container.children);
-            
+
             const sets = [];
             for (let row of rows) {
                 const r = parseInt(row.querySelector(".set-reps").value);
@@ -1259,16 +1376,34 @@
             }
 
             const dateIso = formatISODate(selectedDate);
-            const newLog = {
-                id: Date.now(),
-                date: dateIso,
-                day: workoutDay,
-                name: exerciseName,
-                unit: isBw ? "" : unit,
-                sets: sets
-            };
 
-            logs.unshift(newLog);
+            if (editingLogId) {
+                // UPDATE existing log
+                const logIdx = logs.findIndex(l => l.id === editingLogId);
+                if (logIdx !== -1) {
+                    logs[logIdx].day = workoutDay;
+                    logs[logIdx].name = exerciseName;
+                    logs[logIdx].unit = isBw ? "" : unit;
+                    logs[logIdx].sets = sets;
+                    logs[logIdx].date = dateIso;
+                }
+                cancelEditMode();
+                alert(`Đã cập nhật bài tập ${exerciseName}!`);
+            } else {
+                // CREATE new log
+                const newLog = {
+                    id: Date.now(),
+                    date: dateIso,
+                    day: workoutDay,
+                    name: exerciseName,
+                    unit: isBw ? "" : unit,
+                    sets: sets
+                };
+                logs.unshift(newLog);
+                const prog = evaluateProgression(sets, lastWorkoutFound, isBw, isBw ? "" : unit);
+                alert(`Đã lưu ${exerciseName}! [${prog.label}]`);
+            }
+
             saveLogsToStorage();
 
             // Refresh UI
@@ -1276,14 +1411,77 @@
             renderWeekCalendar();
             updateWeeklyStreak();
             checkPreviousWorkout();
+        }
 
-            // Notify subtle
-            const prog = evaluateProgression(sets, lastWorkoutFound, isBw, isBw ? "" : unit);
-            alert(`Đã lưu ${exerciseName}! [${prog.label}]`);
+        function editLog(id) {
+            const log = logs.find(l => l.id === id);
+            if (!log) return;
+
+            editingLogId = id;
+
+            // Set Form values
+            document.getElementById("workoutDay").value = log.day || "Push";
+            updateExerciseList();
+
+            const select = document.getElementById("exerciseSelect");
+            const customInput = document.getElementById("customExerciseInput");
+
+            // Check if exercise name exists in dropdown
+            let found = false;
+            for (let opt of select.options) {
+                if (opt.value.toLowerCase() === log.name.toLowerCase()) {
+                    select.value = opt.value;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                select.value = "Khác...";
+                customInput.style.display = "block";
+                customInput.value = log.name;
+            } else {
+                customInput.style.display = "none";
+            }
+
+            if (log.unit) {
+                document.getElementById("unitSelect").value = log.unit;
+            }
+
+            // Fill set rows
+            const container = document.getElementById("setsContainer");
+            container.innerHTML = "";
+            log.sets.forEach(s => {
+                addSetRow(s.weight, s.reps);
+            });
+
+            adjustFormForExerciseType();
+
+            // UI Editing Mode
+            document.getElementById("editingBanner").style.display = "flex";
+            const saveBtn = document.getElementById("saveWorkoutLogBtn");
+            saveBtn.textContent = "💾 CẬP NHẬT BÀI TẬP";
+            saveBtn.style.background = "linear-gradient(135deg, #ffd60a, #ff9f0a)";
+            saveBtn.style.color = "#000000";
+
+            // Scroll up to form smoothly
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelEditMode() {
+            editingLogId = null;
+            document.getElementById("editingBanner").style.display = "none";
+            const saveBtn = document.getElementById("saveWorkoutLogBtn");
+            saveBtn.textContent = "💾 LƯU BÀI TẬP VÀO NHẬT KÝ";
+            saveBtn.style.background = "linear-gradient(135deg, #ff453a, #e0261b)";
+            saveBtn.style.color = "#ffffff";
+            initSetRows();
+            checkPreviousWorkout();
         }
 
         function deleteLog(id) {
             if (!confirm("Bạn có chắc chắn muốn xoá bài tập này?")) return;
+            if (editingLogId === id) cancelEditMode();
             logs = logs.filter(l => l.id !== id);
             saveLogsToStorage();
             renderDailyLogs();
@@ -1327,7 +1525,8 @@
                 const isBw = isBodyweightExercise(log.name);
                 const prev = findPreviousWorkout(log.name, log.date);
                 const prog = evaluateProgression(log.sets, prev, isBw, log.unit || "kg");
-                
+                const est1RM = !isBw ? calculateEstimated1RM(log.sets) : 0;
+
                 const card = document.createElement("div");
                 card.className = "log-item";
 
@@ -1359,18 +1558,24 @@
                     `).join("");
                 }
 
+                const rmBadgeHtml = est1RM > 0 ? `<span class="badge-1rm">⚡ 1RM: ${est1RM} ${log.unit || 'kg'}</span>` : '';
+
                 card.innerHTML = `
                     <div class="log-item-top">
                         <div>
                             <div class="log-item-name">${log.name}</div>
                             <div class="log-item-meta">${metaText}</div>
                         </div>
-                        <button class="btn-delete-log" onclick="deleteLog(${log.id})">✕</button>
+                        <div class="log-actions">
+                            <button class="btn-action-log btn-edit-log" title="Sửa bài tập" onclick="editLog(${log.id})">✏️</button>
+                            <button class="btn-action-log btn-delete-log" title="Xóa bài tập" onclick="deleteLog(${log.id})">✕</button>
+                        </div>
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
                         <span class="log-progression-badge ${prog.class}">
                             ${prog.label}
                         </span>
+                        ${rmBadgeHtml}
                     </div>
                     <div class="log-sets-summary">
                         ${setsChips}
@@ -1392,7 +1597,7 @@
         function populateProgressExercises() {
             const select = document.getElementById("progressExerciseSelect");
             const names = Array.from(new Set(logs.map(l => l.name))).sort();
-            
+
             select.innerHTML = "";
             if (names.length === 0) {
                 select.innerHTML = "<option value=''>Chưa có dữ liệu bài tập</option>";
@@ -1488,14 +1693,15 @@
                 });
             } else {
                 const latestUnit = exLogs[exLogs.length - 1].unit || 'kg';
-                stat1Label.textContent = `Kỷ lục tạ (${latestUnit})`;
+                stat1Label.textContent = `Kỷ lục 1RM (${latestUnit})`;
                 stat2Label.textContent = `Tổng Volume cao nhất (${latestUnit})`;
 
-                const maxW = Math.max(...exLogs.flatMap(l => l.sets.map(s => s.weight)));
+                const max1RM = Math.max(...exLogs.map(l => calculateEstimated1RM(l.sets)));
                 const maxVol = Math.max(...exLogs.map(l => l.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0)));
-                statMaxWeight.textContent = `${maxW} ${latestUnit}`;
+                statMaxWeight.textContent = `${max1RM} ${latestUnit}`;
                 statMaxVolume.textContent = `${maxVol.toLocaleString()} ${latestUnit}`;
 
+                const e1rmPoints = exLogs.map(l => calculateEstimated1RM(l.sets));
                 const maxWeightPoints = exLogs.map(l => Math.max(...l.sets.map(s => s.weight)));
                 const volumePoints = exLogs.map(l => l.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0));
 
@@ -1505,12 +1711,22 @@
                         labels: labels,
                         datasets: [
                             {
-                                label: `Mức tạ cao nhất (${latestUnit})`,
-                                data: maxWeightPoints,
+                                label: `Ước tính 1RM (${latestUnit})`,
+                                data: e1rmPoints,
                                 borderColor: '#ff453a',
                                 backgroundColor: 'rgba(255, 69, 58, 0.1)',
                                 borderWidth: 3,
                                 fill: true,
+                                tension: 0.3,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: `Mức tạ cao nhất (${latestUnit})`,
+                                data: maxWeightPoints,
+                                borderColor: '#ff9f0a',
+                                borderDash: [3, 3],
+                                borderWidth: 2,
+                                fill: false,
                                 tension: 0.3,
                                 yAxisID: 'y'
                             },
@@ -1560,7 +1776,7 @@
             revLogs.forEach(log => {
                 const card = document.createElement("div");
                 card.className = "log-item";
-                
+
                 let metaText = "";
                 let setsChips = "";
                 if (isBw) {
@@ -1572,7 +1788,8 @@
                 } else {
                     const totalVol = log.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
                     const unitStr = log.unit || 'kg';
-                    metaText = `${log.day} • Vol: ${totalVol.toLocaleString()} ${unitStr}`;
+                    const est1RM = calculateEstimated1RM(log.sets);
+                    metaText = `${log.day} • Vol: ${totalVol.toLocaleString()} ${unitStr} • ⚡ 1RM: ${est1RM} ${unitStr}`;
                     setsChips = log.sets.map((s, idx) => `
                         <div class="set-chip">S${idx + 1}: <strong>${s.weight}${unitStr}</strong> × <strong>${s.reps}</strong></div>
                     `).join("");
@@ -1628,7 +1845,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const imported = JSON.parse(e.target.result);
                     if (Array.isArray(imported)) {
@@ -1662,4 +1879,5 @@
         }
     </script>
 </body>
+
 </html>
